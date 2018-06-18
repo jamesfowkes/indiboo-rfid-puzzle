@@ -11,4 +11,6 @@ void uid_copy(UID& dst, const UID& src);
 void uid_clear(UID& to_clear);
 bool uid_match(const UID& uid1, const UID& uid2);
 
+void uid_print(const UID& uid, char * buf);
+
 #endif

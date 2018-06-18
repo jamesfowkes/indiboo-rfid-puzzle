@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 /* Application Includes */
 
@@ -36,4 +37,13 @@ bool uid_match(const UID& uid1, const UID& uid2)
 {
 	if (uid1.size != uid2.size) { return false; }
 	return memcmp(uid1.bytes, uid2.bytes, uid1.size) == 0;
+}
+
+void uid_print(const UID& uid, char * buf)
+{
+	uint8_t pos = 0;
+	for (uint8_t i = 0; i<uid.size; i++)
+	{
+		pos += sprintf(buf + pos, "%02X", uid.bytes[i]);
+	}
 }

@@ -1,5 +1,5 @@
 /* Arduino Library Includes */
-
+#include <Arduino.h>
 #include "EEPROMex.h"
 
 /* Application Includes */
@@ -27,9 +27,28 @@ void rfid_nv_setup()
 	}
 }
 
+void rfid_nv_dump_all_data(Stream& s)
+{
+	UID uid;
+	for (uint8_t i=0; i<TOTAL_RFID_COUNT; i++)
+	{
+		rfid_nv_get_uid(uid, i);
+		s.print("EEPROM Address ");
+		s.print(i);
+		s.print(": ");
+		s.print(EEPROM_ADDRESS_UID[i]);
+		s.print(", UID data: ");
+		for (uint8_t j=0; j<sizeof(UID); j++)	
+		{
+			s.print((int)*(((uint8_t*)&uid)+j), 16);
+		}
+		s.println("");
+	}	
+}
+
 void rfid_nv_get_uid(UID& uid, uint8_t direct_index)
 {
-	EEPROM.readBlock(EEPROM_ADDRESS_UID[direct_index], &uid);
+	EEPROM.readBlock(EEPROM_ADDRESS_UID[direct_index], uid);
 }
 
 void rfid_nv_set_uid(UID& uid, uint8_t direct_idx)
