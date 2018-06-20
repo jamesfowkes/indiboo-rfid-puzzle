@@ -4,6 +4,7 @@
 
 #include "uid.h"
 #include "rfid.h"
+#include "commands.h"
 
 #define RFID_NV_ACCESS_DEBUG
 #include "rfid-nv.h"
@@ -48,6 +49,11 @@ static void debug_fn(TaskAction* this_task)
 }
 static TaskAction s_debug(debug_fn, 1000, INFINITE_TICKS);
 
+void app_handle_command(eCommand command)
+{
+	(void)command;
+}
+
 void setup()
 {
 	Serial.begin(115200);
@@ -55,6 +61,8 @@ void setup()
 
 	s_pixels.begin();
 	s_pixels.show();
+
+	command_setup();
 
 	rfid_setup(s_rfid_update_flag);
 
@@ -70,8 +78,11 @@ void loop()
 	bool matched[RFID_SLOT_COUNT];
 
 	uint8_t match_count;
+
 	rfid_tick();
+	command_tick();
 	s_debug.tick();
+
 	if (check_and_clear(s_rfid_update_flag))
 	{
 		match_count = rfid_get_matched(matched);
