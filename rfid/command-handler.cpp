@@ -1,6 +1,6 @@
-#include <Arduino.h>
-
 #include <stdint.h>
+
+#include <Arduino.h>
 
 #include "commands.h"
 
@@ -14,7 +14,7 @@ static const uint8_t COMMAND_PINS[] = {A0, A1, A2};
 static const uint8_t COMMAND_READY_PIN = A3;
 static const uint8_t ACK_PIN = A4;
 
-static eCommandState eState = eCommandState_Idle;
+static eCommandState s_eState = eCommandState_Idle;
 
 #include <TaskAction.h>
 
@@ -60,13 +60,13 @@ static eCommandState handle_ack_state()
 static void command_task_fn(TaskAction* this_task)
 {
 	(void)this_task;
-    switch(eState)
+    switch(s_eState)
     {
 	case eCommandState_Idle:
-		eState = handle_idle_state();
+		s_eState = handle_idle_state();
 		break;
 	case eCommandState_Ack:
-		eState = handle_ack_state();
+		s_eState = handle_ack_state();
 		break;
     }
 }
@@ -87,4 +87,9 @@ void command_setup()
 void command_tick()
 {
 	s_command_task.tick();
+}
+
+bool command_is_idle()
+{
+	return (s_eState == eCommandState_Idle);
 }

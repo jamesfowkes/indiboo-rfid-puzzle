@@ -16,5 +16,6 @@ void rfid_save_all_current_uids();
 void rfid_save_current_uid(uint8_t slot);
 
 uint8_t rfid_get_matched(bool (&show)[RFID_SLOT_COUNT]);
+uint8_t rfid_get_uid_count();
 
 #endif

@@ -1,6 +1,8 @@
 /* C/C++ Includes */
-
 #include <stdint.h>
+
+/* Arduino/AVR Includes */
+#include <avr/wdt.h>
 
 /* Application Includes */
 
@@ -17,8 +19,6 @@ static const uint8_t TOTAL_RFID_COUNT = RFID_SLOT_COUNT * RFID_HISTORY_COUNT;
 
 /* Private Functions */
 
-//static uint8_t _slot(uint8_t total_idx) { return total_idx/RFID_HISTORY_COUNT; }
-//static uint8_t _index(uint8_t total_idx) { return total_idx % RFID_HISTORY_COUNT; }
 static uint8_t direct_index(uint8_t slot, uint8_t index) { return (slot * RFID_HISTORY_COUNT) + index; }
 
 static UID& get_uid_local(uint8_t direct_idx)
@@ -58,19 +58,6 @@ static uint8_t find_or_make_free_index(uint8_t slot)
 	rfid_nv_clear_uid(direct_index(slot, RFID_HISTORY_COUNT-1));
 	return RFID_HISTORY_COUNT-1;
 }
-
-//static uint8_t get_match_index(UID& uid_to_match, uint8_t slot)
-//{
-//	for (uint8_t i=0; i<RFID_HISTORY_COUNT; i++)
-//	{
-//		if (uid_match(get_uid_local(slot,i), uid_to_match))
-//		{
-//			return i;
-//		}
-//	}
-//
-//	return NO_MATCH;
-//}
 
 /* Public Functions */
 
@@ -169,6 +156,7 @@ void rfid_store_clear_all()
 {
 	for (uint8_t i=0; i<TOTAL_RFID_COUNT; i++)
 	{
+		wdt_reset();
 		rfid_nv_clear_uid(i);
 	}
 }

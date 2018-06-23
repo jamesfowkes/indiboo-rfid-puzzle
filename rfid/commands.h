@@ -13,5 +13,6 @@ void app_handle_command(eCommand command);
 
 void command_setup();
 void command_tick();
+bool command_is_idle();
 
 #endif

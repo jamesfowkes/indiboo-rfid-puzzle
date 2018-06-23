@@ -53,11 +53,11 @@ void rfid_nv_get_uid(UID& uid, uint8_t direct_index)
 
 void rfid_nv_set_uid(UID& uid, uint8_t direct_idx)
 {
-	EEPROM.writeBlock(EEPROM_ADDRESS_UID[direct_idx], uid);
+	EEPROM.updateBlock(EEPROM_ADDRESS_UID[direct_idx], uid);
 }
 
 void rfid_nv_clear_uid(uint8_t direct_idx)
 {
 	static const UID BLANK_UID = {0,0,0,0,0,0,0,0,0,0,0};
-	EEPROM.writeBlock(EEPROM_ADDRESS_UID[direct_idx], BLANK_UID);
+	EEPROM.updateBlock(EEPROM_ADDRESS_UID[direct_idx], BLANK_UID);
 }

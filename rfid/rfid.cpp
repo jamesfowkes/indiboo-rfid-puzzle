@@ -155,6 +155,19 @@ uint8_t rfid_get_matched(bool (&match)[RFID_SLOT_COUNT])
     return count;
 }
 
+uint8_t rfid_get_uid_count()
+{
+    uint8_t count = 0;
+    for (uint8_t slot=0; slot<RFID_SLOT_COUNT; slot++)
+    {
+        if (uid_is_valid(s_current_uids[slot]))
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
 void rfid_print_current_uids()
 {
     for (uint8_t slot=0; slot<RFID_SLOT_COUNT; slot++)

@@ -1,15 +1,21 @@
 #include <util/atomic.h>
+#include <avr/wdt.h>
+
 #include <TaskAction.h>
 #include <Adafruit_NeoPixel.h>
 
 #include "uid.h"
 #include "rfid.h"
+#include "rfid-store.h"
 #include "commands.h"
+#include "game-state.h"
 
 #define RFID_NV_ACCESS_DEBUG
 #include "rfid-nv.h"
 
 static bool s_rfid_update_flag = false;
+static bool s_command_flags[4] = {false, false, false, false};
+static bool s_state_override = false;
 
 static Adafruit_NeoPixel s_pixels = Adafruit_NeoPixel(RFID_SLOT_COUNT, 8, NEO_GRB + NEO_KHZ800);
 
@@ -22,11 +28,6 @@ static bool check_and_clear(bool &flag)
 		flag = false;
 	}
 	return value;
-}
-
-static void finish_game()
-{
-
 }
 
 static void show_pixels(Adafruit_NeoPixel& pixels, bool (&show)[RFID_SLOT_COUNT])
@@ -49,13 +50,47 @@ static void debug_fn(TaskAction* this_task)
 }
 static TaskAction s_debug(debug_fn, 1000, INFINITE_TICKS);
 
+static void update_game_state_on_rfid()
+{
+	bool matched[RFID_SLOT_COUNT];
+
+	uint8_t match_count = rfid_get_matched(matched);
+	uint8_t tag_count= rfid_get_uid_count();
+
+	show_pixels(s_pixels, matched);
+
+	if (!s_state_override)
+	{
+		if (tag_count == RFID_SLOT_COUNT)
+		{
+			if (match_count == RFID_SLOT_COUNT)
+			{
+				game_state_set(eGameState_CorrectCombination);
+			}
+			else
+			{
+				game_state_set(eGameState_IncorrectCombination);
+			}
+		}
+		else
+		{
+			game_state_set(eGameState_InProgress);
+		}
+	}
+}
+
 void app_handle_command(eCommand command)
 {
-	(void)command;
+	Serial.print("Got command ");
+	Serial.println((int)command);
+	
+	s_command_flags[command] = true;
 }
 
 void setup()
 {
+	wdt_disable();
+
 	Serial.begin(115200);
 	Serial.println("RFID Puzzle");
 
@@ -63,6 +98,7 @@ void setup()
 	s_pixels.show();
 
 	command_setup();
+	game_state_setup();
 
 	rfid_setup(s_rfid_update_flag);
 
@@ -70,14 +106,14 @@ void setup()
 
 	rfid_save_all_current_uids();
 
+	wdt_enable(WDTO_2S);
+
 	Serial.println("Starting puzzle...");
 }
 
 void loop()
 {
-	bool matched[RFID_SLOT_COUNT];
-
-	uint8_t match_count;
+	wdt_reset();
 
 	rfid_tick();
 	command_tick();
@@ -85,13 +121,32 @@ void loop()
 
 	if (check_and_clear(s_rfid_update_flag))
 	{
-		match_count = rfid_get_matched(matched);
-		
-		show_pixels(s_pixels, matched);
+		update_game_state_on_rfid();
+	}
 
-		if (match_count == RFID_SLOT_COUNT)
-		{
-			finish_game();
-		}
+	if (command_is_idle() && check_and_clear(s_command_flags[eCommand_Reset]))
+	{
+		Serial.println("Resetting via WDT...");
+		while(true) {}
+	}
+
+	if (check_and_clear(s_command_flags[eCommand_WipeMemory]))
+	{
+		Serial.println("Clearing EEPROM");
+		rfid_store_clear_all();
+	}
+
+	if (check_and_clear(s_command_flags[eCommand_StoreMemory]))
+	{
+		Serial.println("Saving current tags to EEPROM");
+		rfid_save_all_current_uids();
+	}
+
+	if (check_and_clear(s_command_flags[eCommand_SetWonGameState]))
+	{
+		Serial.println("Overrding game state to win");
+		s_state_override = true;
+		game_state_set(eGameState_CorrectCombination);
 	}
 }
+

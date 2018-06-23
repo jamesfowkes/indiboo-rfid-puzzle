@@ -20,41 +20,15 @@ static eCommandState eState = eCommandState_Idle;
 
 static void assert_command_ready(bool assert)
 {
-	digitalWrite(ACK_PIN, assert ? LOW : HIGH);
+	digitalWrite(COMMAND_READY_PIN, assert ? LOW : HIGH);
 }
 
-static eCommand read_command()
+static void put_command(eCommand command)
 {
-	return (eCommand)(
-		(digitalRead(COMMAND_PINS[0]) == HIGH ? 0x04 : 0x00) |
-		(digitalRead(COMMAND_PINS[1]) == HIGH ? 0x02 : 0x00) |
-		(digitalRead(COMMAND_PINS[2]) == HIGH ? 0x01 : 0x00)
-	);
-}
-
-static eCommandState handle_idle_state()
-{
-	eCommandState new_state = eCommandState_Idle;
-	eCommand command;
-	if (digitalRead(COMMAND_READY_PIN) == LOW)
-	{
-		command = read_command();
-		app_handle_command(command);
-		new_state = eCommandState_Ack;
-		assert_command_ready(true);
-	}
-	return new_state;
-}
-
-static eCommandState handle_ack_state()
-{
-	eCommandState new_state = eCommandState_Ack;
-	if (digitalRead(COMMAND_READY_PIN) == HIGH)
-	{
-		assert_command_ready(false);
-		new_state = eCommandState_Idle;
-	}
-	return new_state;
+	digitalWrite(COMMAND_PINS[0], ((uint8_t)command & 0x04) ? HIGH : LOW);
+	digitalWrite(COMMAND_PINS[1], ((uint8_t)command & 0x02) ? HIGH : LOW);
+	digitalWrite(COMMAND_PINS[2], ((uint8_t)command & 0x01) ? HIGH : LOW);
+	assert_command_ready(true);
 }
 
 static void command_task_fn(TaskAction* this_task)
@@ -64,6 +38,8 @@ static void command_task_fn(TaskAction* this_task)
     {
     	if (digitalRead(ACK_PIN) == LOW)
     	{
+    		assert_command_ready(false);
+    		Serial.println(F("Entering idle state"));
 			eState = eCommandState_Idle;
 		}
     }
@@ -82,12 +58,17 @@ void command_setup()
 	assert_command_ready(false);
 }
 
-void command_send(eCommand command);
+void command_send(eCommand command)
 {
 	if (eState == eCommandState_Idle)
 	{
 		put_command(command);
 		eState = eCommandState_WaitForAck;
+	}
+	else
+	{
+		Serial.print(F("Not in idle, cannot handle "));
+		Serial.println(command);
 	}
 }
 
