@@ -104,6 +104,12 @@ void rgb_tick()
 	}
 }
 
+void rgb_set(eRGBSetting setting)
+{
+	rgb_get_eeprom(s_rgb, EEPROM_ADDRESS_RGB[setting]);
+	rgb_set(s_rgb);	
+}
+
 void rgb_set(uint8_t(&rgb)[3])
 {
 	rgb_set(rgb[0], rgb[1], rgb[2]);

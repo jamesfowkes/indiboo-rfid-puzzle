@@ -69,7 +69,7 @@ bool rfid_store_check_uid(uint8_t slot, uint8_t index)
 uint8_t rfid_store_save_uid(UID& to_save, uint8_t slot)
 {
 	uint8_t index = 0xFF;
-	if(uid_is_valid(to_save))
+	if(uid_is_valid(to_save) && (rfid_store_match_in_slot(to_save, slot) == NO_MATCH))
 	{
 		index = find_or_make_free_index(slot);
 		rfid_nv_set_uid(to_save, direct_index(slot, index));

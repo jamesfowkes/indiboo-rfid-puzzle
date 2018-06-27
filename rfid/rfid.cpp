@@ -14,7 +14,7 @@
 /* Private Variables */
 
 static const uint8_t SS_PINS[RFID_SLOT_COUNT] = {
-    2, 3, 4, 5, 6, 7
+    7, 2, 3, 4, 5, 6
 };
 
 static uint8_t RST_PIN = 9;
@@ -57,9 +57,13 @@ static void get_uid(MFRC522& mfrc522, UID &uid, uint8_t& count, uint8_t slot)
 
 static void get_uids(MFRC522 (&mfrc522)[RFID_SLOT_COUNT], UID (&uid)[RFID_SLOT_COUNT])
 {
-    for (uint8_t slot=0; slot<RFID_SLOT_COUNT; slot++)
+    static uint8_t slot = 0;
+    get_uid(mfrc522[slot], uid[slot], s_card_not_present_count[slot], slot);
+
+    slot++;
+    if (slot == RFID_SLOT_COUNT)
     {
-        get_uid(mfrc522[slot], uid[slot], s_card_not_present_count[slot], slot);
+        slot = 0;
     }
 }
 
@@ -69,7 +73,7 @@ static void rfid_task_fn(TaskAction* this_task)
     get_uids(s_rfids, s_current_uids);
     *sp_rfid_update_flag = true;
 }
-static TaskAction s_rfid_task(rfid_task_fn, 100, INFINITE_TICKS);
+static TaskAction s_rfid_task(rfid_task_fn, 25, INFINITE_TICKS);
 
 static void print_uid(UID& uid)
 {
@@ -116,16 +120,26 @@ void rfid_setup(bool& rfid_update_flag)
 
     rfid_nv_setup();
 
-    for (slot=0;slot<RFID_SLOT_COUNT;slot++)
-    {
-        s_rfids[slot].PCD_Init();
-        pinMode(SS_PINS[slot], OUTPUT);
-        digitalWrite(SS_PINS[slot], HIGH);
+    uint8_t known_version_count = 0;
 
-        Serial.print("Checking for reader in slot ");
-        Serial.print(slot);
-        Serial.print("...");
-        s_rfids[slot].PCD_DumpVersionToSerial();
+    while(known_version_count < RFID_SLOT_COUNT)
+    {
+        known_version_count = 0;
+        for (slot=0;slot<RFID_SLOT_COUNT;slot++)
+        {
+            pinMode(SS_PINS[slot], OUTPUT);
+            digitalWrite(SS_PINS[slot], HIGH);
+            s_rfids[slot].PCD_Init();
+
+            Serial.print("Checking for reader in slot ");
+            Serial.print(slot);
+            Serial.print("...");
+            if (s_rfids[slot].PCD_DumpVersionToSerial())
+            {
+                known_version_count++;
+            }
+            delay(50);
+        }
     }
 }
 

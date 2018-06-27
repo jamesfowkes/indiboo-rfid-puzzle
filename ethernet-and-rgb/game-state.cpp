@@ -6,10 +6,11 @@
 
 #include "game-state.h"
 
-static const uint8_t STATE_PINS[] = {A5, A6};
+static const uint8_t STATE_PINS[] = {A5, 4};
 
 /* Private Variables */
 static eGameState s_state = eGameState_InProgress;
+static eGameState state_debouncers[2];
 
 static eGameState game_state_read()
 {
@@ -33,8 +34,7 @@ static void game_state_task_fn(TaskAction* this_task)
 	(void)this_task;
 
     static uint8_t read_idx = 0;
-	static eGameState state_debouncers[2];
-
+	
 	state_debouncers[read_idx] = game_state_read();
 	read_idx = 1-read_idx;
 
@@ -45,6 +45,15 @@ static void game_state_task_fn(TaskAction* this_task)
 }
 static TaskAction s_game_state_task(game_state_task_fn, 10, INFINITE_TICKS);
 
+void game_state_debug()
+{
+	Serial.print("State inputs: ");
+	Serial.print(digitalRead(STATE_PINS[0]));
+	Serial.print(",");
+	Serial.print(digitalRead(STATE_PINS[1]));
+	Serial.print(": state ");
+	Serial.println(game_state_read());
+}
 void game_state_setup()
 {
 	pinMode(STATE_PINS[0], INPUT);

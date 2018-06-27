@@ -13,6 +13,7 @@ void rgb_tick();
 
 void rgb_save(uint8_t(&rgb)[3], eRGBSetting setting);
 
+void rgb_set(eRGBSetting setting);
 void rgb_set(uint8_t r, uint8_t g, uint8_t b);
 void rgb_set(uint8_t(&rgb)[3]);
 

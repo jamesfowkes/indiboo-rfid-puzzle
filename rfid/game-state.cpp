@@ -6,7 +6,8 @@
 
 #include "game-state.h"
 
-static const uint8_t STATE_PINS[] = {A5, A6};
+static const uint8_t STATE_PINS[] = {A5, 10};
+static eGameState s_eOldState = -1;
 
 void game_state_setup()
 {
@@ -16,6 +17,13 @@ void game_state_setup()
 
 void game_state_set(eGameState state)
 {
-	digitalWrite(STATE_PINS[0], state & 0x02);
-	digitalWrite(STATE_PINS[1], state & 0x01);
+	if (s_eOldState != state)
+	{
+		Serial.print("Setting game state ");
+		Serial.println(state);
+		s_eOldState = state;
+	}
+
+	digitalWrite(STATE_PINS[0], state & 0x02 ? HIGH : LOW);
+	digitalWrite(STATE_PINS[1], state & 0x01 ? HIGH : LOW);
 }

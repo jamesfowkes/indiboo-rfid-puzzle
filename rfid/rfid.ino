@@ -150,3 +150,48 @@ void loop()
 	}
 }
 
+static void handle_serial_cmd(char const * const cmd)
+{
+	if (strcmp(cmd, "RESET") == 0)
+	{
+		s_command_flags[eCommand_Reset] = true;
+	}
+	else if (strcmp(cmd, "WIPE") == 0)
+	{
+		s_command_flags[eCommand_WipeMemory] = true;
+	}
+	else if (strcmp(cmd, "SAVE") == 0)
+	{
+		s_command_flags[eCommand_StoreMemory] = true;
+	}
+	else if (strcmp(cmd, "WIN") == 0)
+	{
+		s_command_flags[eCommand_SetWonGameState] = true;
+	}
+	else
+	{
+		Serial.println("Command unknown");
+	}
+}
+
+static char s_serial_buffer[16];
+static uint8_t s_bufidx = 0;
+
+void serialEvent()
+{
+	while (Serial.available())
+	{
+		char c  = Serial.read();
+		if (c == '\n')
+		{
+			handle_serial_cmd(s_serial_buffer);
+			s_bufidx = 0;
+			s_serial_buffer[0] = '\0';
+		}
+		else
+		{
+			s_serial_buffer[s_bufidx++] = c;
+			s_serial_buffer[s_bufidx] = '\0';
+		}
+	}
+}

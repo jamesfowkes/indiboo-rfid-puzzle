@@ -10,6 +10,8 @@ typedef enum
 
 void game_state_setup();
 void game_state_tick();
+void game_state_debug();
+
 eGameState game_state_get();
 
 #endif

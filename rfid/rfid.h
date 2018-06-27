@@ -2,7 +2,7 @@
 #define _RFID_H_
 
 #define RFID_SLOT_COUNT 6
-#define RFID_HISTORY_COUNT 3
+#define RFID_HISTORY_COUNT 1
 
 void rfid_setup(bool& rfid_update_flag);
 void rfid_tick();

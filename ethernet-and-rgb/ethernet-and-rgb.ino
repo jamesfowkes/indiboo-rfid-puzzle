@@ -1,3 +1,4 @@
+#include "TaskAction.h"
 #include "EEPROMex.h"
 
 #include "fixed-length-accumulator.h"
@@ -100,10 +101,16 @@ static http_get_handler s_handlers[] =
     {"/wipe", wipe_handler},
     {"/store", store_handler},
     {"/win", win_handler},
-    {"/rgb/correct", set_rgb_handler},
-    {"/rgb/incorrect", set_rgb_handler},
+    {"/rgb", set_rgb_handler},
     {"", NULL}
 };
+
+static void debug_fn(TaskAction* this_task)
+{
+    (void)this_task;
+    game_state_debug();
+}
+static TaskAction s_debug(debug_fn, 1000, INFINITE_TICKS);
 
 void setup()
 {
@@ -133,16 +140,73 @@ void loop()
     game_state_tick();
     ethernet_tick();
 
+    s_debug.tick();
+
     switch(game_state_get())
     {
     case eGameState_InProgress:
+        digitalWrite(RELAY_PINS[0], HIGH);
+        digitalWrite(RELAY_PINS[1], HIGH);
+        rgb_set(0,0,0);
+        break;
     case eGameState_IncorrectCombination:
         digitalWrite(RELAY_PINS[0], HIGH);
         digitalWrite(RELAY_PINS[1], HIGH);
+        rgb_set(eRGBSetting_Incorrect);
         break;
     case eGameState_CorrectCombination:
         digitalWrite(RELAY_PINS[0], LOW);
         digitalWrite(RELAY_PINS[1], LOW);
+        rgb_set(eRGBSetting_Correct);
         break;
+    }
+}
+
+static void handle_serial_cmd(char const * const cmd)
+{
+    if (cmd[0] == '/')
+    {
+        http_get_handler * pHandler = http_server_match_handler_url(cmd, s_handlers);
+        if (pHandler)
+        {
+            pHandler->fn(cmd);
+        }
+        else
+        {
+            Serial.println("No matching URL");
+        }
+    }
+    else if (strcmp(cmd, "INIT") == 0)
+    {
+        set_rgb_handler("/rgb/correct/000000");
+        set_rgb_handler("/rgb/incorrect/000000");
+    }
+    else
+    {
+        Serial.print("Command '");
+        Serial.print(cmd);
+        Serial.println("' unknown");
+    }
+}
+
+static char s_serial_buffer[64];
+static uint8_t s_bufidx = 0;
+
+void serialEvent()
+{
+    while (Serial.available())
+    {
+        char c  = Serial.read();
+        if (c == '\n')
+        {
+            handle_serial_cmd(s_serial_buffer);
+            s_bufidx = 0;
+            s_serial_buffer[0] = '\0';
+        }
+        else
+        {
+            s_serial_buffer[s_bufidx++] = c;
+            s_serial_buffer[s_bufidx] = '\0';
+        }
     }
 }
