@@ -147,7 +147,7 @@ void loop()
     case eGameState_InProgress:
         digitalWrite(RELAY_PINS[0], HIGH);
         digitalWrite(RELAY_PINS[1], HIGH);
-        rgb_set(0,0,0);
+        rgb_set(eRGBSetting_Incorrect);
         break;
     case eGameState_IncorrectCombination:
         digitalWrite(RELAY_PINS[0], HIGH);
